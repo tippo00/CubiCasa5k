@@ -33,8 +33,6 @@ lmdb
 MarkupSafe
 matplotlib
 mistune
-mkl-fft
-mkl-random
 nbconvert
 nbformat
 networkx
