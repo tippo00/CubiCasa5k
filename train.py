@@ -26,7 +26,8 @@ from floortrans.loaders import FloorplanSVG
 from floortrans.models import get_model
 from floortrans.losses import UncertaintyLoss
 from floortrans.metrics import get_px_acc, runningScore
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 
@@ -62,7 +63,7 @@ def train(args, log_dir, writer, logger):
         print("In debug mode.")
         logger.info('In debug mode.')
     else:
-        num_workers = 8
+        num_workers = 4
 
     trainloader = data.DataLoader(train_set, batch_size=args.batch_size,
                                   num_workers=num_workers, shuffle=True, pin_memory=True)
@@ -154,9 +155,12 @@ def train(args, log_dir, writer, logger):
 
             loss = criterion(outputs, labels)
             lossess.append(loss.item())
-            losses = losses.append(criterion.get_loss(), ignore_index=True)
-            variances = variances.append(criterion.get_var(), ignore_index=True)
-            ss = ss.append(criterion.get_s(), ignore_index=True)
+            losses = pd.concat([losses, criterion.get_loss()], ignore_index=True)
+            # losses = losses.append(criterion.get_loss(), ignore_index=True)
+            variances = pd.concat([variances, criterion.get_var()], ignore_index=True)
+            # variances = variances.append(criterion.get_var(), ignore_index=True)
+            ss = pd.concat([ss, criterion.get_s()], ignore_index=True)
+            # ss = ss.append(criterion.get_s(), ignore_index=True)
 
             optimizer.zero_grad()
             loss.backward()
@@ -206,9 +210,12 @@ def train(args, log_dir, writer, logger):
                 px_rooms += float(pr)
                 px_icons += float(pi)
 
-                val_losses = val_losses.append(criterion.get_loss(), ignore_index=True)
-                val_variances = val_variances.append(criterion.get_var(), ignore_index=True)
-                val_ss = val_ss.append(criterion.get_s(), ignore_index=True)
+                # val_losses = val_losses.append(criterion.get_loss(), ignore_index=True)
+                val_losses = pd.concat([val_losses, criterion.get_loss()], ignore_index=True)
+                # val_variances = val_variances.append(criterion.get_var(), ignore_index=True)
+                val_variances = pd.concat([val_variances, criterion.get_var()], ignore_index=True)
+                # val_ss = val_ss.append(criterion.get_s(), ignore_index=True)
+                val_ss = pd.concat([val_ss, criterion.get_s()], ignore_index=True)
 
         val_loss = val_losses.mean()
         # print("CNN done", val_mid-val_start)

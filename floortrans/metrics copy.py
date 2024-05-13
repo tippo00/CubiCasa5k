@@ -127,14 +127,14 @@ def polygons_to_tensor(polygons_val, types_val, room_polygons_val, room_types_va
         else:
             d = 0
         jj, ii = draw.polygon(polygons_val[i][:, 1], polygons_val[i][:, 0])
-        # ### DEBUGGING ###
-        # max_jj = jj.max()
-        # if max_jj >= np.shape(ten[pol_type['class'] + d])[0]:
-        #     jj[jj == max_jj] = max_jj-1
-        # max_ii = ii.max()
-        # if max_ii >= np.shape(ten[pol_type['class'] + d])[1]:
-        #     ii[ii == max_ii] = max_ii-1
-        # ###    END    ###
+        ### DEBUGGING ###
+        max_jj = jj.max()
+        if max_jj >= np.shape(ten[pol_type['class'] + d])[0]:
+            jj[jj == max_jj] = max_jj-1
+        max_ii = ii.max()
+        if max_ii >= np.shape(ten[pol_type['class'] + d])[1]:
+            ii[ii == max_ii] = max_ii-1
+        ###    END    ###
         ten[pol_type['class'] + d][jj, ii] = 1
 
     return ten

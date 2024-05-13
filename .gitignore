@@ -1,3 +1,11 @@
+# Dot-files
+.devcontainer/
+.github/
+.vscode/
+
+# Trained weights
+model_best_*.pkl
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -10,3 +18,4 @@ __pycache__/
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
+
