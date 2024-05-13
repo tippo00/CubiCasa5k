@@ -3,20 +3,6 @@ from torch.nn import Parameter, Module
 from torch.nn.functional import mse_loss, cross_entropy, interpolate
 import pandas as pd
 
-def tensor_to_scalar_or_numpy(tensor):
-    try:
-        # If the tensor is part of the computation graph, detach and move to CPU
-        if tensor.requires_grad:
-            return tensor.detach().cpu().numpy()
-        else:
-            # If the tensor does not require grad, directly move to CPU
-            return tensor.cpu().numpy()
-    except RuntimeError as e:
-        # If it's a scalar, use .item()
-        if tensor.dim() == 0:
-            return tensor.item()
-        else:
-            raise e
 
 class UncertaintyLoss(Module):
     def __init__(self, input_slice=[21, 13, 17],
@@ -105,37 +91,35 @@ class UncertaintyLoss(Module):
         return w_mse_loss_total
 
     def get_loss(self):
-        d = {
-            'total loss': [tensor_to_scalar_or_numpy(self.loss)],
-            'room loss': [tensor_to_scalar_or_numpy(self.loss_rooms)],
-            'icon loss': [tensor_to_scalar_or_numpy(self.loss_icons)],
-            'heatmap loss': [tensor_to_scalar_or_numpy(self.loss_heatmap)],
-            'total loss with variance': [tensor_to_scalar_or_numpy(self.loss_var)],
-            'room loss with variance': [tensor_to_scalar_or_numpy(self.loss_rooms_var)],
-            'icon loss with variance': [tensor_to_scalar_or_numpy(self.loss_icons_var)],
-            'heatmap loss with variance': [tensor_to_scalar_or_numpy(self.loss_heatmap_var)]
-        }
+        d = {'total loss': [self.loss.data.numpy(force=True)],
+             'room loss': [self.loss_rooms.data.numpy(force=True)],
+             'icon loss': [self.loss_icons.data.numpy(force=True)],
+             'heatmap loss': [self.loss_heatmap.data.numpy(force=True)],
+             'total loss with variance': [self.loss_var.data.numpy(force=True)],
+             'room loss with variance': [self.loss_rooms_var.data.numpy(force=True)],
+             'icon loss with variance': [self.loss_icons_var.data.numpy(force=True)],
+             'heatmap loss with variance': [self.loss_heatmap_var.data.numpy(force=True)]}
         return pd.DataFrame(data=d)
 
     def get_var(self):
-        variance = torch.exp(self.log_vars)
-        mse_variance = torch.exp(self.log_vars_mse)
-        d = {'room variance': [tensor_to_scalar_or_numpy(variance[0])],
-             'icon variance': [tensor_to_scalar_or_numpy(variance[1])]}
+        variance = torch.exp(self.log_vars.data)
+        mse_variance = torch.exp(self.log_vars_mse.data)
+        d = {'room variance': [variance[0].numpy(force=True)],
+             'icon variance': [variance[1].numpy(force=True)]}
         for i, m in enumerate(mse_variance):
             key = 'heatmap ' + str(i)
-            d[key] = [tensor_to_scalar_or_numpy(m)]
+            d[key] = [m.numpy(force=True)]
 
         return pd.DataFrame(data=d)
     
     def get_s(self):
-        s = self.log_vars
-        mse_s = self.log_vars_mse
-        d = {'room s': [tensor_to_scalar_or_numpy(s[0])],
-             'icon s': [tensor_to_scalar_or_numpy(s[1])]}
+        s = self.log_vars.data
+        mse_s = self.log_vars_mse.data
+        d = {'room s': [s[0].numpy(force=True)],
+             'icon s': [s[1].numpy(force=True)]}
         for i, m in enumerate(mse_s):
             key = 'heatmap s' + str(i)
-            d[key] = [tensor_to_scalar_or_numpy(m)]
+            d[key] = [m.numpy(force=True)]
 
         return pd.DataFrame(data=d)
 
