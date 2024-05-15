@@ -37,7 +37,7 @@ class FloorplanSVG(Dataset):
 
     def __len__(self):
         """__len__"""
-        return len(self.folders)//len_divisor
+        return len(self.folders)//self.len_divisor
 
     def __getitem__(self, index):
         sample = self.get_data(index)
