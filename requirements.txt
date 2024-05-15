@@ -84,3 +84,4 @@ visdom
 wcwidth
 webencodings
 websocket-client
+tensorboard
