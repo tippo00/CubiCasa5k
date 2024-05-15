@@ -54,9 +54,9 @@ def train(args, log_dir, writer, logger):
     writer.add_text('parameters', str(vars(args)))
     logging.info('Loading data...')
     train_set = FloorplanSVG(args.data_path, 'train.txt', format='lmdb',
-                             augmentations=aug, lmdb_folder=args.lmdb_path)
+                             augmentations=aug, lmdb_folder=args.lmdb_path, len_divisor=args.len_divisor)
     val_set = FloorplanSVG(args.data_path, 'val.txt', format='lmdb',
-                           augmentations=DictToTensor(), lmdb_folder=args.lmdb_path)
+                           augmentations=DictToTensor(), lmdb_folder=args.lmdb_path, len_divisor=args.len_divisor)
 
     if args.debug:
         num_workers = 0
@@ -411,6 +411,8 @@ if __name__ == '__main__':
     parser.add_argument('--scale', nargs='?', type=bool,
                         default=False, const=True,
                         help='Rescale to 256x256 augmentation.')
+    parser.add_argument('--len-divisor', nargs='?', type=int, default=1,
+                        help='Number with which to divide the size of the train and val dataset.')
     args = parser.parse_args()
 
     log_dir = args.log_path + '/' + time_stamp + '/'

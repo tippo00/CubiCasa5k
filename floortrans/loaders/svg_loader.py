@@ -11,7 +11,7 @@ from floortrans.loaders.house import House
 class FloorplanSVG(Dataset):
     def __init__(self, data_folder, data_file, is_transform=True,
                  augmentations=None, img_norm=True, format='txt',
-                 original_size=False, lmdb_folder='cubi_lmdb/'):
+                 original_size=False, lmdb_folder='cubi_lmdb/', len_divisor=1):
         self.img_norm = img_norm
         self.is_transform = is_transform
         self.augmentations = augmentations
@@ -20,6 +20,7 @@ class FloorplanSVG(Dataset):
         self.image_file_name = '/F1_scaled.png'
         self.org_image_file_name = '/F1_original.png'
         self.svg_file_name = '/model.svg'
+        self.len_divisor = len_divisor
 
         if format == 'txt':
             self.get_data = self.get_txt
@@ -36,7 +37,7 @@ class FloorplanSVG(Dataset):
 
     def __len__(self):
         """__len__"""
-        return len(self.folders)
+        return len(self.folders)//len_divisor
 
     def __getitem__(self, index):
         sample = self.get_data(index)
