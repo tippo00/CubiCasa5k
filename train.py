@@ -54,9 +54,9 @@ def train(args, log_dir, writer, logger):
     writer.add_text('parameters', str(vars(args)))
     logging.info('Loading data...')
     train_set = FloorplanSVG(args.data_path, 'train.txt', format='lmdb',
-                             augmentations=aug)
+                             augmentations=aug, lmdb_folder=args.lmdb_path)
     val_set = FloorplanSVG(args.data_path, 'val.txt', format='lmdb',
-                           augmentations=DictToTensor())
+                           augmentations=DictToTensor(), lmdb_folder=args.lmdb_path)
 
     if args.debug:
         num_workers = 0
@@ -373,8 +373,10 @@ if __name__ == '__main__':
                         help='Optimizer to use [\'adam, sgd\']')
     parser.add_argument('--data-path', nargs='?', type=str, default='data/cubicasa5k/',
                         help='Path to data directory')
+    parser.add_argument('--lmdb-path', nargs='?', type=str, default='cubi_lmdb/',
+                        help='Path to lmdb')
     parser.add_argument('--n-classes', nargs='?', type=int, default=44,
-                        help='# of the epochs')
+                        help='# of classes')
     parser.add_argument('--n-epoch', nargs='?', type=int, default=1000,
                         help='# of the epochs')
     parser.add_argument('--batch-size', nargs='?', type=int, default=26,
