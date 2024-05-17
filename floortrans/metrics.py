@@ -185,7 +185,7 @@ def get_evaluation_tensors(val, model, split, logger, rotate=True, n_classes=44)
     logger.info("Prediction post processing done")
 
     predicted_classes = polygons_to_tensor(
-        polygons, types, room_polygons, room_types, img_size)
+        polygons, types, room_polygons, room_types, img_size, split=split[1:])
     
     pol_rooms = np.argmax(predicted_classes[:split[1]], axis=0)
     pol_icons = np.argmax(predicted_classes[split[1]:], axis=0)

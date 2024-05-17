@@ -11,8 +11,8 @@ from floortrans.loaders.augmentations import DictToTensor, Compose
 from floortrans.metrics import get_evaluation_tensors, runningScore
 from tqdm import tqdm
 
-room_cls = ["Background", "Outdoor", "Wall", "Kitchen", "Living Room", "Bedroom", "Bath", "Hallway", "Railing", "Storage", "Garage", "Other rooms"]
-icon_cls = ["Empty", "Window", "Door", "Closet", "Electr. Appl.", "Toilet", "Sink", "Sauna bench", "Fire Place", "Bathtub", "Chimney"]
+room_cls = ["Background", "Outdoor", "Wall", "Room", "Railing"]
+icon_cls = ["Empty", "Window", "Door"]
 
 
 def print_res(name, res, cls_names, logger):
@@ -42,29 +42,34 @@ def print_res(name, res, cls_names, logger):
 
 def evaluate(args, log_dir, writer, logger):
 
-    normal_set = FloorplanSVG(args.data_path, 'test.txt', format='lmdb', lmdb_folder='cubi_lmdb/', augmentations=Compose([DictToTensor()]))
+    normal_set = FloorplanSVG(args.data_path, 'test.txt', format='lmdb', lmdb_folder=args.lmdb_path, augmentations=Compose([DictToTensor()]))
     data_loader = data.DataLoader(normal_set, batch_size=1, num_workers=0)
 
     checkpoint = torch.load(args.weights)
     # Setup Model
     model = get_model(args.arch, 51)
     n_classes = args.n_classes
-    split = [21, 12, 11]
+    if args.n_classes == 44:
+        split = [21, 12, 11]
+    elif args.n_classes == 29:
+        split = [21, 5, 3]
+    else:
+        split = [None, None, None]
     model.conv4_ = torch.nn.Conv2d(256, n_classes, bias=True, kernel_size=1)
     model.upsample = torch.nn.ConvTranspose2d(n_classes, n_classes, kernel_size=4, stride=4)
     model.load_state_dict(checkpoint['model_state'])
     model.eval()
     model.cuda()
 
-    score_seg_room = runningScore(12)
-    score_seg_icon = runningScore(11)
-    score_pol_seg_room = runningScore(12)
-    score_pol_seg_icon = runningScore(11)
+    score_seg_room = runningScore(split[1])
+    score_seg_icon = runningScore(split[2])
+    score_pol_seg_room = runningScore(split[1])
+    score_pol_seg_icon = runningScore(split[2])
     with torch.no_grad():
         for count, val in tqdm(enumerate(data_loader), total=len(data_loader),
                                ncols=80, leave=False):
             logger.info(count)
-            things = get_evaluation_tensors(val, model, split, logger, rotate=True)
+            things = get_evaluation_tensors(val, model, split, logger, rotate=True, n_classes=n_classes)
 
             label, segmentation, pol_segmentation = things
 
@@ -88,11 +93,13 @@ if __name__ == '__main__':
     parser.add_argument('--data-path', nargs='?', type=str, default='data/cubicasa5k/',
                         help='Path to data directory')
     parser.add_argument('--n-classes', nargs='?', type=int, default=44,
-                        help='# of the epochs')
+                        help='# of classes')
     parser.add_argument('--weights', nargs='?', type=str, default=None,
                         help='Path to previously trained model weights file .pkl')
     parser.add_argument('--log-path', nargs='?', type=str, default='runs_cubi/',
                         help='Path to log directory')
+    parser.add_argument('--lmdb-path', nargs='?', type=str, default='cubi_lmdb/',
+                        help='Path to lmdb')
 
     args = parser.parse_args()
 

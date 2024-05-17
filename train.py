@@ -72,10 +72,12 @@ def train(args, log_dir, writer, logger):
 
     # Setup Model
     logging.info('Loading model...')
-    if args.n_classes != 44:
+    if args.n_classes == 44:
+        input_slice = [21, 12, 11]
+    elif args.n_classes == 29:
         input_slice = [21, 5, 3]
     else:
-        input_slice = [21, 12, 11]
+        input_slice = [None, None, None]
 
     if args.arch == 'hg_furukawa_original':
         model = get_model(args.arch, 51)
