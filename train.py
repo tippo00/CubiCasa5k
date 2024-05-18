@@ -320,7 +320,7 @@ def train(args, log_dir, writer, logger):
 
                         label = "Image "+str(i)+" prediction/Channel "
 
-                        for j, l in enumerate(np.squeeze(heatmap_pred)):
+                        for j, l in enumerate(np.squeeze(heatmap_pred.cpu())):
                             fig = plt.figure(figsize=(18, 12))
                             plot = fig.add_subplot(111)
                             cax = plot.imshow(l, vmin=0, vmax=1)
