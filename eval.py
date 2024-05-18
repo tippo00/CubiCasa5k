@@ -49,12 +49,11 @@ def evaluate(args, log_dir, writer, logger):
     # Setup Model
     model = get_model(args.arch, 51)
     n_classes = args.n_classes
-    if args.n_classes == 44:
-        split = [21, 12, 11]
-    elif args.n_classes == 29:
-        split = [21, 5, 3]
-    else:
-        split = [None, None, None]
+    split = {
+        44: [21, 12, 11],
+        29: [21, 5, 3]
+    }
+    split = split[args.n_classes]
     model.conv4_ = torch.nn.Conv2d(256, n_classes, bias=True, kernel_size=1)
     model.upsample = torch.nn.ConvTranspose2d(n_classes, n_classes, kernel_size=4, stride=4)
     model.load_state_dict(checkpoint['model_state'])
