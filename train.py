@@ -54,9 +54,9 @@ def train(args, log_dir, writer, logger):
     writer.add_text('parameters', str(vars(args)))
     logging.info('Loading data...')
     train_set = FloorplanSVG(args.data_path, 'train.txt', format='lmdb',
-                             augmentations=aug)
+                             augmentations=aug, lmdb_folder=args.lmdb_path, len_divisor=args.len_divisor)
     val_set = FloorplanSVG(args.data_path, 'val.txt', format='lmdb',
-                           augmentations=DictToTensor())
+                           augmentations=DictToTensor(), lmdb_folder=args.lmdb_path, len_divisor=args.len_divisor)
 
     if args.debug:
         num_workers = 0
@@ -72,7 +72,12 @@ def train(args, log_dir, writer, logger):
 
     # Setup Model
     logging.info('Loading model...')
-    input_slice = [21, 12, 11]
+    input_slice = {
+        44: [21, 12, 11],
+        29: [21, 5, 3]
+    }
+    input_slice = input_slice[args.n_classes]
+
     if args.arch == 'hg_furukawa_original':
         model = get_model(args.arch, 51)
         criterion = UncertaintyLoss(input_slice=input_slice)
@@ -306,7 +311,7 @@ def train(args, log_dir, writer, logger):
 
                         label = "Image "+str(i)+" prediction/Channel "
 
-                        for j, l in enumerate(np.squeeze(heatmap_pred)):
+                        for j, l in enumerate(np.squeeze(heatmap_pred.cpu())):
                             fig = plt.figure(figsize=(18, 12))
                             plot = fig.add_subplot(111)
                             cax = plot.imshow(l, vmin=0, vmax=1)
@@ -373,8 +378,10 @@ if __name__ == '__main__':
                         help='Optimizer to use [\'adam, sgd\']')
     parser.add_argument('--data-path', nargs='?', type=str, default='data/cubicasa5k/',
                         help='Path to data directory')
+    parser.add_argument('--lmdb-path', nargs='?', type=str, default='cubi_lmdb/',
+                        help='Path to lmdb')
     parser.add_argument('--n-classes', nargs='?', type=int, default=44,
-                        help='# of the epochs')
+                        help='# of classes')
     parser.add_argument('--n-epoch', nargs='?', type=int, default=1000,
                         help='# of the epochs')
     parser.add_argument('--batch-size', nargs='?', type=int, default=26,
@@ -409,6 +416,8 @@ if __name__ == '__main__':
     parser.add_argument('--scale', nargs='?', type=bool,
                         default=False, const=True,
                         help='Rescale to 256x256 augmentation.')
+    parser.add_argument('--len-divisor', nargs='?', type=int, default=1,
+                        help='Number with which to divide the size of the train and val dataset.')
     args = parser.parse_args()
 
     log_dir = args.log_path + '/' + time_stamp + '/'
