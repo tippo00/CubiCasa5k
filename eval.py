@@ -11,8 +11,14 @@ from floortrans.loaders.augmentations import DictToTensor, Compose
 from floortrans.metrics import get_evaluation_tensors, runningScore
 from tqdm import tqdm
 
-room_cls = ["Background", "Outdoor", "Wall", "Room", "Railing"]
-icon_cls = ["Empty", "Window", "Door"]
+room_cls_dict = {
+    44: ["Background", "Outdoor", "Wall", "Kitchen", "Living Room", "Bedroom", "Bath", "Hallway", "Railing", "Storage", "Garage", "Other rooms"],
+    29: ["Background", "Outdoor", "Wall", "Room", "Railing"]
+}
+icon_cls_dict = {
+    44: ["Empty", "Window", "Door", "Closet", "Electr. Appl.", "Toilet", "Sink", "Sauna bench", "Fire Place", "Bathtub", "Chimney"],
+    29: ["Empty", "Window", "Door"]
+}
 
 
 def print_res(name, res, cls_names, logger):
@@ -54,6 +60,8 @@ def evaluate(args, log_dir, writer, logger):
         29: [21, 5, 3]
     }
     split = split[args.n_classes]
+    room_cls = room_cls_dict[args.n_classes]
+    icon_cls = icon_cls_dict[args.n_classes]
     model.conv4_ = torch.nn.Conv2d(256, n_classes, bias=True, kernel_size=1)
     model.upsample = torch.nn.ConvTranspose2d(n_classes, n_classes, kernel_size=4, stride=4)
     model.load_state_dict(checkpoint['model_state'])
