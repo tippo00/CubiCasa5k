@@ -87,8 +87,8 @@ def train(args, log_dir, writer, logger):
             model.load_state_dict(checkpoint['model_state'])
             criterion.load_state_dict(checkpoint['criterion_state'])
 
-        model.conv4_ = torch.nn.Conv2d(256, 44, bias=True, kernel_size=1)
-        model.upsample = torch.nn.ConvTranspose2d(44, 44, kernel_size=4, stride=4)
+        model.conv4_ = torch.nn.Conv2d(256, args.n_classes, bias=True, kernel_size=1)
+        model.upsample = torch.nn.ConvTranspose2d(args.n_classes, args.n_classes, kernel_size=4, stride=4)
         for m in [model.conv4_, model.upsample]:
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             nn.init.constant_(m.bias, 0)
@@ -98,7 +98,10 @@ def train(args, log_dir, writer, logger):
 
     model.cuda()
 
-
+# Drawing graph for TensorBoard
+    dummy = torch.zeros((2, 3, args.image_size, args.image_size)).cuda()
+    model(dummy)
+    writer.add_graph(model, dummy)
 
     params = [{'params': model.parameters(), 'lr': args.l_rate},
               {'params': criterion.parameters(), 'lr': args.l_rate}]
@@ -140,18 +143,6 @@ def train(args, log_dir, writer, logger):
             logger.info("Loaded checkpoint '{}' (epoch {})".format(args.weights, checkpoint['epoch']))
         else:
             logger.info("No checkpoint found at '{}'".format(args.weights)) 
-
-    model.conv4_ = torch.nn.Conv2d(256, args.n_classes, bias=True, kernel_size=1)
-    model.upsample = torch.nn.ConvTranspose2d(args.n_classes, args.n_classes, kernel_size=4, stride=4)
-    for m in [model.conv4_, model.upsample]:
-        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-        nn.init.constant_(m.bias, 0)
-
-    model.cuda()
-    # Drawing graph for TensorBoard
-    dummy = torch.zeros((2, 3, args.image_size, args.image_size)).cuda()
-    model(dummy)
-    writer.add_graph(model, dummy)
 
     for epoch in range(start_epoch, args.n_epoch):
         model.train()
