@@ -98,7 +98,7 @@ def train(args, log_dir, writer, logger):
 
     model.cuda()
 
-# Drawing graph for TensorBoard
+    # Drawing graph for TensorBoard
     dummy = torch.zeros((2, 3, args.image_size, args.image_size)).cuda()
     model(dummy)
     writer.add_graph(model, dummy)
