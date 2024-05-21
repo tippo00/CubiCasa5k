@@ -53,7 +53,10 @@ def evaluate(args, log_dir, writer, logger):
 
     checkpoint = torch.load(args.weights)
     # Setup Model
-    model = get_model(args.arch, 51)
+    if args.arch == 'hg_furukawa_original':
+        model = get_model(args.arch, 51)
+    elif args.arch == 'cc5k':
+        model = get_model(args.arch, 44)
     n_classes = args.n_classes
     split = {
         44: [21, 12, 11],
