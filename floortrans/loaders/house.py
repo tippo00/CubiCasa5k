@@ -10,14 +10,14 @@ import json
 n_classes = 29
 match n_classes:
     case 44:
-        with open('rooms_44.json', 'r') as fp:
+        with open('/app/floortrans/loaders/rooms_44.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('icons_44.json', 'r') as fp:
+        with open('/app/floortrans/loaders/icons_44.json', 'r') as fp:
             data_icons = json.load(fp)
     case 29:
-        with open('rooms_29.json', 'r') as fp:
+        with open('/app/floortrans/loaders/rooms_29.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('icons_29.json', 'r') as fp:
+        with open('/app/floortrans/loaders/icons_29.json', 'r') as fp:
             data_icons = json.load(fp)
 
 all_rooms = data_rooms['all_rooms']

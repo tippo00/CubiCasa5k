@@ -81,11 +81,25 @@ def train(args, log_dir, writer, logger):
     if args.arch == 'hg_furukawa_original':
         model = get_model(args.arch, 51)
         criterion = UncertaintyLoss(input_slice=input_slice)
-        if args.furukawa_weights:
-            logger.info("Loading furukawa model weights from checkpoint '{}'".format(args.furukawa_weights))
-            checkpoint = torch.load(args.furukawa_weights)
+        if args.arch_weights:
+            logger.info("Loading furukawa model weights from checkpoint '{}'".format(args.arch_weights))
+            checkpoint = torch.load(args.arch_weights)
             model.load_state_dict(checkpoint['model_state'])
             criterion.load_state_dict(checkpoint['criterion_state'])
+
+        model.conv4_ = torch.nn.Conv2d(256, args.n_classes, bias=True, kernel_size=1)
+        model.upsample = torch.nn.ConvTranspose2d(args.n_classes, args.n_classes, kernel_size=4, stride=4)
+        for m in [model.conv4_, model.upsample]:
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            nn.init.constant_(m.bias, 0)
+    elif args.arch == 'cc5k':
+        model = get_model(args.arch, 44)
+        criterion = UncertaintyLoss(input_slice=input_slice)
+        # if args.arch_weights:
+        #     logger.info("Loading cc5k model weights from checkpoint '{}'".format(args.arch_weights))
+        #     checkpoint = torch.load(args.arch_weights)
+        #     model.load_state_dict(checkpoint['model_state'])
+        #     criterion.load_state_dict(checkpoint['criterion_state'])
 
         model.conv4_ = torch.nn.Conv2d(256, args.n_classes, bias=True, kernel_size=1)
         model.upsample = torch.nn.ConvTranspose2d(args.n_classes, args.n_classes, kernel_size=4, stride=4)
@@ -400,8 +414,8 @@ if __name__ == '__main__':
                         help='Divider for # of features to use')
     parser.add_argument('--weights', nargs='?', type=str, default=None,
                         help='Path to previously trained model weights file .pkl')
-    parser.add_argument('--furukawa-weights', nargs='?', type=str, default=None,
-                        help='Path to previously trained furukawa model weights file .pkl')
+    parser.add_argument('--arch-weights', nargs='?', type=str, default=None,
+                        help='Path to previously trained architecture model weights file .pkl')
     parser.add_argument('--new-hyperparams', nargs='?', type=bool,
                         default=False, const=True,
                         help='Continue training with new hyperparameters')
