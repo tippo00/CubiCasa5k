@@ -158,6 +158,13 @@ def train(args, log_dir, writer, logger):
         else:
             logger.info("No checkpoint found at '{}'".format(args.weights)) 
 
+    # Freeze parameters
+    if args.freeze:
+        for child in model.children():
+            if child is model.conv4_ or child is model.upsample:
+                continue
+            child.requires_grad_(False)
+
     for epoch in range(start_epoch, args.n_epoch):
         model.train()
         lossess = []
@@ -432,6 +439,9 @@ if __name__ == '__main__':
                         help='Rescale to 256x256 augmentation.')
     parser.add_argument('--len-divisor', nargs='?', type=int, default=1,
                         help='Number with which to divide the size of the train and val dataset.')
+    parser.add_argument('--freeze', nargs='?', type=bool,
+                        default=False, const=True,
+                        help='Freeze all layers except conv4_ and upsample')
     args = parser.parse_args()
 
     log_dir = args.log_path + '/' + time_stamp + '/'
