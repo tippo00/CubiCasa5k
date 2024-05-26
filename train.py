@@ -75,7 +75,7 @@ def train(args, log_dir, writer, logger):
     input_slice = {
         44: [21, 12, 11],
         29: [21, 5, 3],
-        26: [21, 3, 2]
+        27: [21, 3, 3]
     }
     input_slice = input_slice[args.n_classes]
 

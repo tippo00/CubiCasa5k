@@ -7,7 +7,7 @@ import cv2
 import json
 
 
-n_classes = 26
+n_classes = 27
 match n_classes:
     case 44:
         with open('/app/floortrans/loaders/rooms_44.json', 'r') as fp:
@@ -19,10 +19,10 @@ match n_classes:
             data_rooms = json.load(fp)
         with open('/app/floortrans/loaders/icons_29.json', 'r') as fp:
             data_icons = json.load(fp)
-    case 26:
-        with open('/app/floortrans/loaders/rooms_26.json', 'r') as fp:
+    case 27:
+        with open('/app/floortrans/loaders/rooms_27.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('/app/floortrans/loaders/icons_26.json', 'r') as fp:
+        with open('/app/floortrans/loaders/icons_27.json', 'r') as fp:
             data_icons = json.load(fp)
 
 all_rooms = data_rooms['all_rooms']

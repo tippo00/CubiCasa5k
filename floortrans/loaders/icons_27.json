@@ -54,7 +54,7 @@
         "ShowerPlatform": 51
     },
     "icons_selected": {
-        "Window": null,
+        "Window": 2,
         "Door": 1,
         "Closet": null,
         "ClosetRound": null,
