@@ -7,7 +7,7 @@ import cv2
 import json
 
 
-n_classes = 27
+n_classes = 44
 match n_classes:
     case 44:
         with open('/app/floortrans/loaders/rooms_44.json', 'r') as fp:
