@@ -24,7 +24,19 @@ docker run --rm -it --init \
   -e NVIDIA_VISIBLE_DEVICES=0 \
   cubi jupyter-lab --port 1111 --ip 0.0.0.0 --no-browser
 ```
+
 You can now open a terminal in [JupyterLab web interface](http://localhost:1111) to execute more commands in the container.
+
+```bash
+docker run --rm -it --init \
+  --runtime=nvidia \
+  --ipc=host \
+  --publish 1111:1111 \
+  --user="$(id -u):$(id -g)" \
+  --volume=$PWD:/app \
+  -e NVIDIA_VISIBLE_DEVICES=0 \
+  cubi bash
+```
 
 ## Database creation
 We create a LMDB database of the dataset, where we store the floorplan image, segmentation tensors and heatmap coordinates. This way we can access the data faster during training and evaluation. The downside however is that the database takes about 105G of hard drive space. There is an option to parse the SVG file on the go but it is slow for training.
@@ -34,10 +46,26 @@ python create_lmdb.py --txt val.txt
 python create_lmdb.py --txt test.txt
 python create_lmdb.py --txt train.txt
 ```
+```bash
+python create_lmdb.py --txt val.txt --lmdb data/cubicasa5k/cubi_lmdb_27_classes/
+python create_lmdb.py --txt test.txt --lmdb data/cubicasa5k/cubi_lmdb_27_classes/
+python create_lmdb.py --txt train.txt --lmdb data/cubicasa5k/cubi_lmdb_27_classes/ 
+```
+```bash
+python create_lmdb.py --txt val.txt --lmdb data/cubicasa5k/cubi_lmdb_29_classes/
+python create_lmdb.py --txt test.txt --lmdb data/cubicasa5k/cubi_lmdb_29_classes/
+python create_lmdb.py --txt train.txt --lmdb data/cubicasa5k/cubi_lmdb_29_classes/ 
+```
 
 ## Train
 ```bash
 python train.py
+```
+```bash
+python train.py --n-classes=27 --lmdb-path='cubi_lmdb_27_classes/' --plot-samples=True --n-epoch=500 --arch=cc5k --freeze
+```
+```bash
+python train.py --n-classes=29 --lmdb-path='cubi_lmdb_29_classes/' --plot-samples=True --n-epoch=500 --arch=cc5k --freeze
 ```
 Different training options can be found in the script file. Tensorboard is not included in the docker container. You need to run it outside and point it to cubi_runs/ folder. For each run a new folder is created with a timestamp as the folder name.
 ```bash
