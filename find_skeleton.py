@@ -7,29 +7,33 @@ from floortrans.loaders import FloorplanSVG
 from floortrans.loaders.augmentations import (DictToTensor)
 import matplotlib.pyplot as plt
 from os.path import exists
+from skimage.morphology import skeletonize
+from time import time
+
 
 
 def find_skeleton(args):
-    # if not exists('floor-plan.png'):
-    # floor_plan = cv2.imread('floor-plan.png')
-    # doors = cv2.imread('floor-plan_doors.png')
-    walls, doors = ground_truth_bw(args)
-    floor_plan = walls + doors 
-    cv2.imwrite('floor_plan.png', floor_plan*255)
+    gt_floor_plan = ground_truth_bw(args)
+    pr_floor_plan = predicted_bw(args)
+
+    start_time = time()
+    skeleton = skeletonize(gt_floor_plan).astype(np.uint8)
+    print(f"Skeletonization took: {time() - start_time:.4f} seconds")
+    # print(np.unique(skeleton))
+    # cv2.imwrite('skeleton.png', skeleton*255)
+    
+
+    kernel = np.ones((3, 3), np.uint8)
+    dilated_image = cv2.dilate(skeleton, kernel, iterations=2).astype(np.uint8)
+    # cv2.imwrite('dilated_image.png', dilated_image*255)
+    overlayed = gt_floor_plan - dilated_image
+    cv2.imwrite('overlayed.png', overlayed*255)
 
 
 
 def ground_truth_bw(args):
     val_set = FloorplanSVG(args.data_path, 'val.txt', format='lmdb',
                             augmentations=DictToTensor(), lmdb_folder=args.lmdb_path, len_divisor=args.len_divisor)
-
-    num_workers = 0
-
-    # valloader = data.DataLoader(val_set, batch_size=1,
-    #                                 num_workers=num_workers, pin_memory=True)
-    # next(iter(valloader))
-    # next(iter(valloader))
-    # samples_val = next(iter(valloader))
 
     samples_val = val_set[9]
 
@@ -39,9 +43,15 @@ def ground_truth_bw(args):
 
     walls = np.array(np.invert(rooms == 1), dtype=int)
     doors = np.array(icons == 2, dtype=int)
+    floor_plan = walls + doors 
     cv2.imwrite('walls.png', walls*255)
     cv2.imwrite('doors.png', doors*255)
-    return walls, doors
+    cv2.imwrite('floor_plan.png', floor_plan*255)
+    return floor_plan
+
+def predicted_bw(args):
+
+    return None
 
 
 if __name__ == '__main__':
