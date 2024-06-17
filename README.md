@@ -84,6 +84,13 @@ Our model weights file can be downloaded [here](https://drive.google.com/file/d/
 ```bash
 python eval.py --weights model_best_val_loss_var.pkl
 ```
+```bash
+python eval.py --n-classes=29 --lmdb-path='cubi_lmdb_29_classes/' --weights='runs_cubi/2024-05-21-09:41:21-arch:cc5k-nclass:29-ldiv:1/model_best_val_loss_var.pkl' --arch=cc5k
+```
+```bash
+python eval.py --n-classes=27 --lmdb-path='cubi_lmdb_27_classes/' --weights='runs_cubi/2024-06-13-09:11:56-nclass:27-freeze-cc5k/model_best_val_loss_var.pkl' --arch=cc5k
+```
+
 Additional option for evaluation can be found in the script file. The results can be found in runs_cubi/ folder. 
 
 ## Todo
