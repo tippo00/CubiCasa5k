@@ -13,11 +13,13 @@ from tqdm import tqdm
 
 room_cls_dict = {
     44: ["Background", "Outdoor", "Wall", "Kitchen", "Living Room", "Bedroom", "Bath", "Hallway", "Railing", "Storage", "Garage", "Other rooms"],
-    29: ["Background", "Outdoor", "Wall", "Room", "Railing"]
+    29: ["Background", "Outdoor", "Wall", "Room", "Railing"],
+    27: ["Background", "Wall", "Room"]
 }
 icon_cls_dict = {
     44: ["Empty", "Window", "Door", "Closet", "Electr. Appl.", "Toilet", "Sink", "Sauna bench", "Fire Place", "Bathtub", "Chimney"],
-    29: ["Empty", "Window", "Door"]
+    29: ["Empty", "Window", "Door"],
+    27: ["Empty", "Window", "Door"]
 }
 
 
@@ -60,7 +62,8 @@ def evaluate(args, log_dir, writer, logger):
     n_classes = args.n_classes
     split = {
         44: [21, 12, 11],
-        29: [21, 5, 3]
+        29: [21, 5, 3],
+        27: [21, 3, 3]
     }
     split = split[args.n_classes]
     room_cls = room_cls_dict[args.n_classes]

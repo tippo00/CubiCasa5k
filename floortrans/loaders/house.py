@@ -6,8 +6,8 @@ from skimage.draw import polygon
 import cv2
 import json
 
-
-n_classes = 44
+# Important to change this before lmdb creation and evaluation
+n_classes = 27
 match n_classes:
     case 44:
         with open('/app/floortrans/loaders/rooms_44.json', 'r') as fp:

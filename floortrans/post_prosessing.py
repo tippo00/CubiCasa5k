@@ -363,7 +363,7 @@ def get_polygons(predictions, threshold, all_opening_types):
 
     wall_heatmaps = heatmaps[:13]
     walls = np.empty([0, 4, 2], int)
-    wall_layers = [2, 8]
+    wall_layers = [2, 8] # HERE
     walls, wall_types, wall_points, wall_lines, wall_point_orientation_lines_map = get_wall_polygon(wall_heatmaps, room_seg, threshold, wall_layers, point_orientations, orientation_ranges)
 
     icons = np.empty([0, 4, 2], int)
