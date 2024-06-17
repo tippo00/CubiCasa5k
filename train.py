@@ -167,46 +167,49 @@ def train(args, log_dir, writer, logger):
             child.requires_grad_(False)
 
     for epoch in range(start_epoch, args.n_epoch):
-        model.train()
-        lossess = []
-        losses = pd.DataFrame()
-        variances = pd.DataFrame()
-        ss = pd.DataFrame()
-        # Training
-        for i, samples in tqdm(enumerate(trainloader), total=len(trainloader),
-                               ncols=80, leave=False):
-            images = samples['image'].cuda(non_blocking=True)
-            labels = samples['label'].cuda(non_blocking=True)
+        if epoch > 0 or not args.weights:
+            model.train()
+            lossess = []
+            losses = pd.DataFrame()
+            variances = pd.DataFrame()
+            ss = pd.DataFrame()
+            # Training
+            for i, samples in tqdm(enumerate(trainloader), total=len(trainloader),
+                                ncols=80, leave=False):
+                images = samples['image'].cuda(non_blocking=True)
+                labels = samples['label'].cuda(non_blocking=True)
 
-            outputs = model(images)
+                outputs = model(images)
 
-            loss = criterion(outputs, labels)
-            lossess.append(loss.item())
-            losses = pd.concat([losses, criterion.get_loss()], ignore_index=True)
-            # losses = losses.append(criterion.get_loss(), ignore_index=True)
-            variances = pd.concat([variances, criterion.get_var()], ignore_index=True)
-            # variances = variances.append(criterion.get_var(), ignore_index=True)
-            ss = pd.concat([ss, criterion.get_s()], ignore_index=True)
-            # ss = ss.append(criterion.get_s(), ignore_index=True)
+                loss = criterion(outputs, labels)
+                lossess.append(loss.item())
+                losses = pd.concat([losses, criterion.get_loss()], ignore_index=True)
+                # losses = losses.append(criterion.get_loss(), ignore_index=True)
+                variances = pd.concat([variances, criterion.get_var()], ignore_index=True)
+                # variances = variances.append(criterion.get_var(), ignore_index=True)
+                ss = pd.concat([ss, criterion.get_s()], ignore_index=True)
+                # ss = ss.append(criterion.get_s(), ignore_index=True)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-        avg_loss = np.mean(lossess)
-        avg_loss = np.inf
-        loss = losses.mean()
-        variance = variances.mean()
-        s = ss.mean()
+            avg_loss = np.mean(lossess)
+            avg_loss = np.inf
+            loss = losses.mean()
+            variance = variances.mean()
+            s = ss.mean()
 
-        logging.info("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, avg_loss))
+            logging.info("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, avg_loss))
 
-        writer.add_scalars('training/loss', loss, global_step=1+epoch)
-        writer.add_scalars('training/variance', variance, global_step=1+epoch)
-        writer.add_scalars('training/s', s, global_step=1+epoch)
-        current_lr = {'base': optimizer.param_groups[0]['lr'],
-                      'var': optimizer.param_groups[1]['lr']}
-        writer.add_scalars('training/lr', current_lr, global_step=1+epoch)
+            writer.add_scalars('training/loss', loss, global_step=1+epoch)
+            writer.add_scalars('training/variance', variance, global_step=1+epoch)
+            writer.add_scalars('training/s', s, global_step=1+epoch)
+            current_lr = {'base': optimizer.param_groups[0]['lr'],
+                        'var': optimizer.param_groups[1]['lr']}
+            writer.add_scalars('training/lr', current_lr, global_step=1+epoch)
+        else:
+            avg_loss = np.inf
 
         # Validation
         model.eval()
