@@ -19,3 +19,12 @@ __pycache__/
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
+# PNG files for debug
+dilated_skeleton.png
+doors.png
+floor_plan.png
+mask.png
+overlayed.png
+skeleton.npy
+skeleton.png
+walls.png
