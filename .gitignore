@@ -28,3 +28,5 @@ overlayed.png
 skeleton.npy
 skeleton.png
 walls.png
+adjacency_matrix.png
+hist_adjacency_matrix.png
