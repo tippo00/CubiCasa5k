@@ -28,25 +28,26 @@ def find_skeleton(args):
         print(f"Skeletonization took: {time() - start_time:.4f} seconds")
         np.save('skeleton.npy',skeleton)
             
-    adjacency_matrix, coordinate_matrix = make_graph(skeleton_image=skeleton)
-    print(f'Shape pre-reduction: {coordinate_matrix.shape}')
-    adjacency_matrix, coordinate_matrix = reduce_deg_2_nodes(adjacency_matrix.copy(), coordinate_matrix.copy(), 40.0)
-    print(f'Shape post-reduction: {coordinate_matrix.shape}')
-    adjacency_matrix, coordinate_matrix = merge_by_proximity(adjacency_matrix.copy(), coordinate_matrix.copy(), 3.0)
-    print(f'Shape post-reduction: {coordinate_matrix.shape}')
-    print(f'Symmetric: {np.allclose(adjacency_matrix, adjacency_matrix.T)}')
+    adj_matrix, coord_matrix = make_graph(skeleton_image=skeleton)
+    print(f'Shape pre-reduction: {coord_matrix.shape}')
+    adj_matrix, coord_matrix = reduce_deg_2_nodes(adj_matrix.copy(), coord_matrix.copy(), 40.0)
+    print(f'Shape post-reduction: {coord_matrix.shape}')
+    adj_matrix, coord_matrix = merge_by_proximity(adj_matrix.copy(), coord_matrix.copy(), 3.0)
+    print(f'Shape post-reduction: {coord_matrix.shape}')
+    print(f'Symmetric: {np.allclose(adj_matrix, adj_matrix.T)}')
 
     if args.visualize:
-        visualize_graph(adjacency_matrix, coordinate_matrix)
+        visualize_graph(adj_matrix, coord_matrix)
         kernel = np.ones((3, 3), np.uint8)
         dilated_image = cv2.dilate(skeleton, kernel, iterations=2).astype(np.uint8)
         overlayed = gt_floor_plan - dilated_image
-        plt.hist(np.sum(adjacency_matrix, axis=0))
+        plt.clf()
+        plt.hist(np.sum(adj_matrix, axis=0))
         plt.savefig('hist_adjacency_matrix.png')
         cv2.imwrite('skeleton.png', skeleton*255)
         cv2.imwrite('dilated_skeleton.png', dilated_image*255)
         cv2.imwrite('overlayed.png', overlayed*255)
-        cv2.imwrite('adjacency_matrix.png', adjacency_matrix*255)
+        cv2.imwrite('adjacency_matrix.png', adj_matrix*255)
 
 # ----------------------------------------------------------------------------------------
 def merge_by_proximity(adj, coords, epsilon):
@@ -142,10 +143,10 @@ def visualize_graph(adj, coords):
   for i in range(len(adj)):
     for j in range(i, len(adj)):
       if adj[i, j]:
-        plt.plot([coords[i, 0], coords[j, 0]], [coords[i, 1], coords[j, 1]], 'b-o', alpha=0.7)
+        plt.plot([coords[i, 1], coords[j, 1]], [coords[i, 0], coords[j, 0]], 'b-o', alpha=0.7)
 
   # Draw nodes
-  plt.scatter(coords[:, 0], coords[:, 1], marker='o', color='black', s=50)
+  plt.scatter(coords[:, 1], coords[:, 0], marker='o', color='black', s=50)
 
   # Add labels for nodes (optional)
   # for i, coord in enumerate(coords):
@@ -155,7 +156,9 @@ def visualize_graph(adj, coords):
   plt.xlabel("X-axis")
   plt.ylabel("Y-axis")
   plt.axis('off')
-  plt.show()
+  plt.axis('equal')
+  plt.gca().invert_yaxis()
+  plt.savefig('graph_visualization.png')
 
 # ----------------------------------------------------------------------------------------
 
