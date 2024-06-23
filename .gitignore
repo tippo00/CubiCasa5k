@@ -20,15 +20,5 @@ __pycache__/
 [._]sw[a-p]
 
 # PNG files for debug
-dilated_skeleton.png
-doors.png
-floor_plan.png
-mask.png
-overlayed.png
-skeleton.npy
-skeleton.png
-walls.png
-adjacency_matrix.png
-hist_adjacency_matrix.png
-graph_visualization.png
-RDP_adj_matrix.png
+*.png
+*.npy

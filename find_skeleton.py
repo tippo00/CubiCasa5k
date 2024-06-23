@@ -35,8 +35,6 @@ def find_skeleton(args):
     # print(f'Shape post-reduction: {coord_matrix.shape}')
     # adj_matrix, coord_matrix = merge_by_proximity(adj_matrix.copy(), coord_matrix.copy(), 3.0)
     # print(f'Shape post-reduction: {coord_matrix.shape}')
-    # adj_matrix, coord_matrix = simplify_graph(adj_matrix.copy(), coord_matrix.copy(), 1.0)
-    # print(f'Shape post-reduction: {coord_matrix.shape}')
     adj_matrix, coord_matrix = RDP_graph(adj_matrix.copy(), coord_matrix.copy(), 10.0)
     print(f'Shape post-reduction: {coord_matrix.shape}')
     print(f'Symmetric: {np.allclose(adj_matrix, adj_matrix.T)}')
@@ -64,10 +62,10 @@ def RDP_graph(adj, coords, epsilon):
     # visited = np.zeros(n, dtype=bool)
     keep = ~mask.copy()
 
-    print(f'mask:{mask.shape}')
-    print(f'adj:{adj.shape}')
-    print(f'coords:{coords.shape}')
-    print(f'mask sum:{np.sum(mask)}')
+    # print(f'mask:{mask.shape}')
+    # print(f'adj:{adj.shape}')
+    # print(f'coords:{coords.shape}')
+    # print(f'mask sum:{np.sum(mask)}')
 
     # Find connected components only among the degree 2 nodes
     n_comp, components = scipy.sparse.csgraph.connected_components(adj[mask][:, mask], directed=False)
@@ -80,14 +78,39 @@ def RDP_graph(adj, coords, epsilon):
     print(f'keep sum before rdp:{np.sum(keep)}')
     # Iterate through all connected components
     for i in range(n_comp):
-    #    DouglasPeucker(coords[mask][components==i], epsilon)
+        # Prepping data
         loop_mask = np.zeros_like(mask)
         loop_mask[mask] = components==i
+
+        # mask1 = loop_mask
+        cv2.imwrite('pre_rdp_adj.png', adj[loop_mask][:, loop_mask]*255)
+        if i == 3:
+            visualize_graph(adj[loop_mask][:, loop_mask],coords[loop_mask],'pre_rdp_visualization',False,False)
+        
+
+        # Doing RDP
         return_mask = rdp(coords[loop_mask],epsilon=epsilon,return_mask=True)
         keep[loop_mask] = np.logical_or(keep[loop_mask], return_mask)
-        # return_mask = rdp(coords[mask][components==i],epsilon=epsilon,return_mask=True)
-        # keep[mask][components==i] = np.logical_or(keep[mask][components==i], return_mask)
+
+        # Fixing adjacency
+        keep_loop_mask = np.logical_and(keep, loop_mask)
+        # adj[keep_loop_mask][:,keep_loop_mask] = np.diag(np.ones(2),1) + np.diag(np.ones(2),-1)
+        for j, jj in enumerate(np.nonzero(keep_loop_mask)[0]):
+           for k, kk in enumerate(np.nonzero(keep_loop_mask)[0]):
+              if j != k and (j==k+1 or j==k-1):
+                adj[jj,kk] = 1
+              else:
+                adj[jj,kk] = 0
+                 
+
+        # Visualization
         debug_table[i] = np.sum(return_mask)
+        # mask2 = keep_loop_mask
+        if i == 3:
+            visualize_graph(adj[keep_loop_mask][:, keep_loop_mask],coords[keep_loop_mask],'post_rdp_visualization',False,True)
+        cv2.imwrite('post_rdp_adj.png', adj[keep_loop_mask][:, keep_loop_mask]*255)
+        print('',end='')
+
     print(f'keep sum after rdp:{np.sum(keep)}')
     print(f'debug table: {debug_table}')
     print(f'debug table sum: {np.sum(debug_table)}')
@@ -100,136 +123,6 @@ def RDP_graph(adj, coords, epsilon):
     return new_adj, new_coords
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
-def DouglasPeucker(coords, epsilon):
-    # Find the point with the maximum distance
-    dmax = 0
-    index = 0
-    for i in range(1, len(coords)):
-        p1 = coords[0,:]
-        p2 = coords[i,:]
-        p3 = coords[-1,:]
-        d = np.cross(p2-p1, p1-p3)/np.linalg.norm(p2-p1)
-        if d > dmax:
-            index = i
-            dmax = d
-
-    result_coords = []
-
-    # If max distance is greater than epsilon, recursively simplify
-    if dmax > epsilon:
-       # Recursive call
-       recResults1 = DouglasPeucker(coords[:index,:],epsilon)
-       recResults2 = DouglasPeucker(coords[index:,:],epsilon)
-
-       # Build the result list
-
-       # Possible error because psuedo-code uses one-based array
-       result_coords = np.concatenate(recResults1[0:len(recResults1),:],recResults2[0:len(recResults2),:])
-    else:
-       result_coords = np.concatenate(coords[0,:],coords[-1,:])
-    # Return the result
-    return result_coords
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-def find_connected_components(adjacency_matrix):
-  """
-  Finds connected components in an undirected graph using DFS.
-
-  Args:
-      adjacency_matrix: A numpy array representing the adjacency matrix of the graph.
-
-  Returns:
-      A list of lists, where each inner list represents a connected component (node indices).
-  """
-  visited = np.zeros(len(adjacency_matrix))  # Keeps track of visited nodes
-  components = []  # Stores connected components
-
-  def dfs_util(node):
-    """
-    Performs a DFS traversal starting from a node.
-
-    Args:
-        node: The index of the node to start traversal from.
-    """
-    visited[node] = True
-    component = [node]
-    for neighbor in range(len(adjacency_matrix[node])):
-      if adjacency_matrix[node][neighbor] == 1 and not visited[neighbor]:
-        dfs_util(neighbor)
-        component.append(neighbor)
-    components.append(component)
-
-  # Iterate through unvisited nodes to find all components
-  for node in range(len(adjacency_matrix)):
-    if not visited[node]:
-      dfs_util(node)
-
-  return components
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-def simplify_graph(adjacency_matrix, coordinate_matrix, epsilon):
-    """
-    Simplifies a graph by removing degree-2 nodes within a tolerance (epsilon)
-
-    Args:
-        adjacency_matrix: A numpy array representing the adjacency matrix of the graph.
-        coordinate_matrix: A numpy array representing the node coordinates.
-        epsilon: The tolerance for distance between a degree-2 node and the line connecting its neighbors.
-
-    Returns:
-        A tuple containing the simplified adjacency matrix and coordinate matrix.
-    """
-    
-    print(adjacency_matrix.shape)
-    print(coordinate_matrix.shape)
-    # Keep track of nodes to delete
-    n = len(adjacency_matrix)
-    delete_nodes = np.zeros(n, dtype=bool)
-
-    # Identify degree-2 nodes
-    degree = np.sum(adjacency_matrix, axis=0)
-    degree_2_nodes = np.where(degree == 2)[0]
-
-    # Iterate through degree-2 nodes
-    simplified_adjacency_matrix = adjacency_matrix.copy()
-    simplified_coordinate_matrix = coordinate_matrix.copy()
-    for node in degree_2_nodes:
-            neighbors = np.where(adjacency_matrix[node] == 1)[0]
-            
-            # Check if neighbors are connected (should be 2)
-            if len(neighbors) != 2:
-                continue
-
-            # Calculate line parameters between neighbors
-            neighbor1, neighbor2 = neighbors
-            line_direction = coordinate_matrix[neighbor2].astype(np.float64) - coordinate_matrix[neighbor1].astype(np.float64)
-            line_norm = np.linalg.norm(line_direction)
-            if line_norm == 0:
-                continue  # Avoid division by zero
-            line_direction /= line_norm
-
-            # Calculate perpendicular distance from node to line
-            distance = np.abs(np.dot(coordinate_matrix[node].astype(np.int32) - coordinate_matrix[neighbor1].astype(np.int32), line_direction))
-
-            # Remove node if within tolerance
-            if distance <= epsilon:
-                # Update adjacency matrix
-                simplified_adjacency_matrix[neighbor1, neighbor2] = 1
-                simplified_adjacency_matrix[neighbor2, neighbor1] = 1
-                # simplified_adjacency_matrix[node] = np.zeros(len(adjacency_matrix))
-                # simplified_adjacency_matrix[:, node] = np.zeros(len(adjacency_matrix))
-                delete_nodes[node] = True
-
-    # Update adjacency matrix (remove node)
-    simplified_adjacency_matrix = np.delete(simplified_adjacency_matrix, delete_nodes, axis=0)
-    simplified_adjacency_matrix = np.delete(simplified_adjacency_matrix, delete_nodes, axis=1)
-    # Update coordinate matrix (remove node)
-    simplified_coordinate_matrix = np.delete(simplified_coordinate_matrix, delete_nodes, axis=0)
-
-    print(simplified_adjacency_matrix.shape)
-    print(simplified_coordinate_matrix.shape)
-
-    return simplified_adjacency_matrix, simplified_coordinate_matrix
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
 def merge_by_proximity(adj, coords, epsilon):
@@ -311,7 +204,7 @@ def reduce_deg_2_nodes(adj, coords, epsilon):
   return new_adj, new_coords
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
-def visualize_graph(adj, coords):
+def visualize_graph(adj, coords,filename='graph_visualization',show=True,labels=False):
   """
   This function visualizes a graph represented by an adjacency matrix and a coordinate matrix.
 
@@ -331,8 +224,9 @@ def visualize_graph(adj, coords):
   plt.scatter(coords[:, 1], coords[:, 0], marker='o', color='black', s=50)
 
   # Add labels for nodes (optional)
-#   for i, coord in enumerate(coords):
-#     plt.annotate(f'{i}', (coord[1], coord[0]), textcoords="offset points", xytext=(0, 10), ha='center')
+  if labels:
+    for i, coord in enumerate(coords):
+      plt.annotate(f'{i}', (coord[1], coord[0]), textcoords="offset points", xytext=(0, 10), ha='center')
 
   plt.title("Graph Visualization")
   plt.xlabel("X-axis")
@@ -340,8 +234,10 @@ def visualize_graph(adj, coords):
   plt.axis('off')
   plt.axis('equal')
   plt.gca().invert_yaxis()
-  plt.savefig('graph_visualization.png')
-  plt.show()
+  plt.savefig(f'{filename}.png')
+  if show: 
+     plt.show()
+  plt.close()
 
 # ----------------------------------------------------------------------------------------
 
