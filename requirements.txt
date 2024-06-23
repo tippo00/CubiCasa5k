@@ -85,3 +85,4 @@ wcwidth
 webencodings
 websocket-client
 tensorboard
+pybind11_rdp
