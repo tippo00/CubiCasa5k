@@ -35,12 +35,12 @@ def find_skeleton(args):
     # print(f'Shape post-reduction: {coord_matrix.shape}')
     # adj_matrix, coord_matrix = merge_by_proximity(adj_matrix.copy(), coord_matrix.copy(), 3.0)
     # print(f'Shape post-reduction: {coord_matrix.shape}')
-    adj_matrix, coord_matrix = RDP_graph(adj_matrix.copy(), coord_matrix.copy(), 10.0)
+    adj_matrix, coord_matrix = RDP_graph(adj_matrix.copy(), coord_matrix.copy(), 0.1)
     print(f'Shape post-reduction: {coord_matrix.shape}')
     print(f'Symmetric: {np.allclose(adj_matrix, adj_matrix.T)}')
 
     if args.visualize:
-        visualize_graph(adj_matrix, coord_matrix)
+        visualize_graph(adj_matrix, coord_matrix,labels=False)
         kernel = np.ones((3, 3), np.uint8)
         dilated_image = cv2.dilate(skeleton, kernel, iterations=2).astype(np.uint8)
         overlayed = gt_floor_plan - dilated_image
@@ -62,6 +62,7 @@ def RDP_graph(adj, coords, epsilon):
     # visited = np.zeros(n, dtype=bool)
     keep = ~mask.copy()
 
+    # visualize_graph(adj[mask][:, mask],coords[mask],'rdp_mask_visualization')
     # print(f'mask:{mask.shape}')
     # print(f'adj:{adj.shape}')
     # print(f'coords:{coords.shape}')
@@ -69,22 +70,40 @@ def RDP_graph(adj, coords, epsilon):
 
     # Find connected components only among the degree 2 nodes
     n_comp, components = scipy.sparse.csgraph.connected_components(adj[mask][:, mask], directed=False)
+
+    # Debug
+    # for i in range(n_comp):
+    #     loop_mask = np.zeros_like(mask)
+    #     loop_mask[mask] = components==i
+    #     visualize_graph(adj[loop_mask][:, loop_mask],coords[loop_mask],'rdp_loop_mask_visualization')
+
     # print(np.unique(components,return_counts=True))
 
     # I think I am assuming that the nodes are connected in sequence which probably isn't
     #   the case and would need to be verified with the adjacency matrix
 
-    debug_table = np.zeros(n_comp)
-    print(f'keep sum before rdp:{np.sum(keep)}')
+    # debug_table = np.zeros(n_comp)
+    # print(f'keep sum before rdp:{np.sum(keep)}')
     # Iterate through all connected components
     for i in range(n_comp):
         # Prepping data
         loop_mask = np.zeros_like(mask)
         loop_mask[mask] = components==i
+        if np.sum(loop_mask) > 1:
+            # print(f'adj[1,1]: {adj[np.ix_(loop_mask,loop_mask)][1,1]}')
+            idx_endpoints_old = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
+            adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask] = sort_adj_coord(
+                adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask]
+            )
+            idx_endpoints_new = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
+            
+            # print(f'adj[1,1]: {adj[np.ix_(loop_mask,loop_mask)][1,1]}')
+
 
         # mask1 = loop_mask
         cv2.imwrite('pre_rdp_adj.png', adj[loop_mask][:, loop_mask]*255)
-        if i == 3:
+        vis = False
+        if vis:
             visualize_graph(adj[loop_mask][:, loop_mask],coords[loop_mask],'pre_rdp_visualization',False,False)
         
 
@@ -94,26 +113,30 @@ def RDP_graph(adj, coords, epsilon):
 
         # Fixing adjacency
         keep_loop_mask = np.logical_and(keep, loop_mask)
+        n = np.count_nonzero(keep_loop_mask)
+        adj[np.ix_(keep_loop_mask,keep_loop_mask)] = np.diag(np.ones(n-1),1) + \
+                                                        np.diag(np.ones(n-1),-1)
         # adj[keep_loop_mask][:,keep_loop_mask] = np.diag(np.ones(2),1) + np.diag(np.ones(2),-1)
-        for j, jj in enumerate(np.nonzero(keep_loop_mask)[0]):
-           for k, kk in enumerate(np.nonzero(keep_loop_mask)[0]):
-              if j != k and (j==k+1 or j==k-1):
-                adj[jj,kk] = 1
-              else:
-                adj[jj,kk] = 0
+        # for j, jj in enumerate(np.nonzero(keep_loop_mask)[0]):
+        #    for k, kk in enumerate(np.nonzero(keep_loop_mask)[0]):
+        #       if j != k and (j==k+1 or j==k-1):
+        #         adj[jj,kk] = 1
+        #       else:
+        #         adj[jj,kk] = 0
                  
 
         # Visualization
-        debug_table[i] = np.sum(return_mask)
+        # debug_table[i] = np.sum(return_mask)
         # mask2 = keep_loop_mask
-        if i == 3:
+        if vis:
             visualize_graph(adj[keep_loop_mask][:, keep_loop_mask],coords[keep_loop_mask],'post_rdp_visualization',False,True)
+            plt.close()
         cv2.imwrite('post_rdp_adj.png', adj[keep_loop_mask][:, keep_loop_mask]*255)
-        print('',end='')
+        print('',end='') # 9, 17, 21  (maybe add skip sorting if len = 2)
 
-    print(f'keep sum after rdp:{np.sum(keep)}')
-    print(f'debug table: {debug_table}')
-    print(f'debug table sum: {np.sum(debug_table)}')
+    # print(f'keep sum after rdp:{np.sum(keep)}')
+    # print(f'debug table: {debug_table}')
+    # print(f'debug table sum: {np.sum(debug_table)}')
 
 
     # Remove isolated nodes (nodes with degree 0 after merging)
@@ -123,6 +146,39 @@ def RDP_graph(adj, coords, epsilon):
     return new_adj, new_coords
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
+def sort_adj_coord(adj,coords):
+    # Find endpoint nodes
+    idx_endpoints = np.nonzero(np.sum(adj, axis=0) == 1)[0]
+    # Debug
+    if len(idx_endpoints) != 2:
+       raise ValueError('More or less than 2 endpoints!')
+      
+    # print(idx_endpoints)
+    # print(np.unique(np.sum(adj, axis=0),return_counts=True))
+    new_adj = np.zeros_like(adj)
+    new_coords = np.zeros_like(coords)
+    new_coords[0] = coords[idx_endpoints[0]]
+    new_coords[-1] = coords[idx_endpoints[1]]
+    # new_coords[-1] = coords[idx_endpoints[-1]]
+    from_node = idx_endpoints[0]
+    new_adj = np.diag(np.ones(len(adj)-1),1) + np.diag(np.ones(len(adj)-1),-1)
+    new_adj[idx_endpoints[0],idx_endpoints[0]]
+    new_adj[idx_endpoints[1],idx_endpoints[1]]
+    for i in range(len(adj)-1):
+        to_node = np.nonzero(adj[from_node])[0][-1]
+        # Can change this to simply creating the +1 and -1 diagonal matrix from the start
+        # new_adj[i, i+1] = 1
+        # new_adj[i+1, i] = 1
+        new_coords[i+1] = coords[to_node]
+        from_node = to_node
+
+    adj[1,1] = 1
+    print(f'adj(1,1): {adj[1,1]}')
+    cv2.imwrite('sort_adj.png', new_adj*255)
+
+    return new_adj, new_coords
+
+   
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
 def merge_by_proximity(adj, coords, epsilon):
@@ -237,7 +293,6 @@ def visualize_graph(adj, coords,filename='graph_visualization',show=True,labels=
   plt.savefig(f'{filename}.png')
   if show: 
      plt.show()
-  plt.close()
 
 # ----------------------------------------------------------------------------------------
 
