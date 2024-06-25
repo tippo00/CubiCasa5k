@@ -238,6 +238,7 @@ def merge_by_proximity(adj, coords, epsilon):
         adj[:,i] = np.logical_or(adj[:,i], adj[:,j]).astype(np.uint8)
         adj[j] = adj[i].copy()
         adj[:,j] = adj[:,i].copy()
+        adj[j,j] = 0 # Remove self-loops
         # Update coordinates for the remaining node (consider averaging or other strategies)
         # Placeholder for coordinate update strategy (e.g., averaging)
         coords[i] = (coords[i] + coords[j]) // 2  # Average coordinates
