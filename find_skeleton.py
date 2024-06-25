@@ -82,6 +82,9 @@ def RDP_graph(adj, coords, epsilon):
 
     new_adj = adj.copy()
     new_coords = coords.copy()
+    # gloabl_lose_map = np.nan(n,dtype=np.uint32)
+    # gloabl_lose_count = 0
+    remove = np.zeros_like(mask)
     # Iterate through all connected components
     for i in range(n_comp):
         # Prepping data
@@ -116,6 +119,9 @@ def RDP_graph(adj, coords, epsilon):
         # keep[idx_map] = np.logical_or(keep[idx_map], return_mask)
         keep_map = idx_map[return_mask]
         lose_map = idx_map[~return_mask]
+        # gloabl_losemap[gloabl_lose_count:gloabl_lose_count+len(lose_map)] = lose_map
+        # gloabl_lose__count = len(lose_map)
+        remove[lose_map] = True
 
         # Fixing adjacency
         # keep_loop_mask = np.logical_and(keep, loop_mask)
@@ -148,8 +154,8 @@ def RDP_graph(adj, coords, epsilon):
 
 
     # Remove isolated nodes (nodes with degree 0 after merging)
-    new_adj = new_adj[keep][:, keep]
-    new_coords = new_coords[keep]
+    new_adj = new_adj[np.ix_(~remove,~remove)]
+    new_coords = new_coords[~remove]
 
     return new_adj, new_coords
 # ----------------------------------------------------------------------------------------
