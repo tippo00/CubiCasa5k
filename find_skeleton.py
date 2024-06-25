@@ -40,7 +40,7 @@ def find_skeleton(args):
     print(f'Symmetric: {np.allclose(adj_matrix, adj_matrix.T)}')
 
     if args.visualize:
-        visualize_graph(adj_matrix, coord_matrix,labels=False)
+        visualize_graph(adj_matrix, coord_matrix,show=True,labels=False)
         kernel = np.ones((3, 3), np.uint8)
         dilated_image = cv2.dilate(skeleton, kernel, iterations=2).astype(np.uint8)
         overlayed = gt_floor_plan - dilated_image
@@ -56,10 +56,7 @@ def find_skeleton(args):
 def RDP_graph(adj, coords, epsilon):
     # Filter out all nodes that are degree 2
     mask = np.sum(adj, axis=0) == 2
-    # adj = adj[mask][:, mask]
-    # coords = coords[mask]
     n = len(adj)
-    # visited = np.zeros(n, dtype=bool)
     keep = ~mask.copy()
 
     # visualize_graph(adj[mask][:, mask],coords[mask],'rdp_mask_visualization')
@@ -77,45 +74,56 @@ def RDP_graph(adj, coords, epsilon):
     #     loop_mask[mask] = components==i
     #     visualize_graph(adj[loop_mask][:, loop_mask],coords[loop_mask],'rdp_loop_mask_visualization')
 
-    # print(np.unique(components,return_counts=True))
 
     # I think I am assuming that the nodes are connected in sequence which probably isn't
     #   the case and would need to be verified with the adjacency matrix
 
-    # debug_table = np.zeros(n_comp)
     # print(f'keep sum before rdp:{np.sum(keep)}')
+
+    new_adj = adj.copy()
+    new_coords = coords.copy()
     # Iterate through all connected components
     for i in range(n_comp):
         # Prepping data
         loop_mask = np.zeros_like(mask)
         loop_mask[mask] = components==i
-        if np.sum(loop_mask) > 1:
+        if np.sum(loop_mask) < 2:
+           continue
+        # if np.sum(loop_mask) > 1:
             # print(f'adj[1,1]: {adj[np.ix_(loop_mask,loop_mask)][1,1]}')
-            idx_endpoints_old = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
-            adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask] = sort_adj_coord(
-                adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask]
-            )
-            idx_endpoints_new = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
-            
+            # idx_endpoints_old = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
+            # adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask] = sort_adj_coord(
+            #     adj[np.ix_(loop_mask,loop_mask)], coords[loop_mask]
+            # )
+            # idx_endpoints_new = np.nonzero(np.sum(adj[np.ix_(loop_mask,loop_mask)], axis=0) == 1)[0]
+
             # print(f'adj[1,1]: {adj[np.ix_(loop_mask,loop_mask)][1,1]}')
-
-
-        # mask1 = loop_mask
-        cv2.imwrite('pre_rdp_adj.png', adj[loop_mask][:, loop_mask]*255)
+        cv2.imwrite('pre_sort_adj.png', adj[np.ix_(loop_mask,loop_mask)]*255)
         vis = False
         if vis:
-            visualize_graph(adj[loop_mask][:, loop_mask],coords[loop_mask],'pre_rdp_visualization',False,False)
+            visualize_graph(adj[np.ix_(loop_mask,loop_mask)],coords[loop_mask],'pre_sort_visualization',False,True)
+
+        idx_map = sort_map(adj, coords, loop_mask)
+
+        # mask1 = loop_mask
+        if vis:
+            visualize_graph(adj[np.ix_(idx_map,idx_map)],coords[idx_map],'pre_rdp_visualization',False,False)
+        cv2.imwrite('pre_rdp_adj.png', adj[np.ix_(idx_map,idx_map)]*255)
         
 
         # Doing RDP
-        return_mask = rdp(coords[loop_mask],epsilon=epsilon,return_mask=True)
-        keep[loop_mask] = np.logical_or(keep[loop_mask], return_mask)
+        return_mask = rdp(coords[idx_map],epsilon=epsilon,return_mask=True).astype(bool)
+        # keep[idx_map] = np.logical_or(keep[idx_map], return_mask)
+        keep_map = idx_map[return_mask]
+        lose_map = idx_map[~return_mask]
 
         # Fixing adjacency
-        keep_loop_mask = np.logical_and(keep, loop_mask)
-        n = np.count_nonzero(keep_loop_mask)
-        adj[np.ix_(keep_loop_mask,keep_loop_mask)] = np.diag(np.ones(n-1),1) + \
+        # keep_loop_mask = np.logical_and(keep, loop_mask)
+        n = len(keep_map)
+        new_adj[np.ix_(keep_map,keep_map)] = np.diag(np.ones(n-1),1) + \
                                                         np.diag(np.ones(n-1),-1)
+        new_adj[lose_map,:] = 0
+        new_adj[:,lose_map] = 0
         # adj[keep_loop_mask][:,keep_loop_mask] = np.diag(np.ones(2),1) + np.diag(np.ones(2),-1)
         # for j, jj in enumerate(np.nonzero(keep_loop_mask)[0]):
         #    for k, kk in enumerate(np.nonzero(keep_loop_mask)[0]):
@@ -129,10 +137,10 @@ def RDP_graph(adj, coords, epsilon):
         # debug_table[i] = np.sum(return_mask)
         # mask2 = keep_loop_mask
         if vis:
-            visualize_graph(adj[keep_loop_mask][:, keep_loop_mask],coords[keep_loop_mask],'post_rdp_visualization',False,True)
+            visualize_graph(new_adj[keep_map][:, keep_map],new_coords[keep_map],'post_rdp_visualization',False,True)
             plt.close()
-        cv2.imwrite('post_rdp_adj.png', adj[keep_loop_mask][:, keep_loop_mask]*255)
-        print('',end='') # 9, 17, 21  (maybe add skip sorting if len = 2)
+        cv2.imwrite('post_rdp_adj.png', new_adj[keep_map][:, keep_map]*255)
+        print('',end='') # 9, 17, 21, 22  (maybe add skip sorting if len = 2)
 
     # print(f'keep sum after rdp:{np.sum(keep)}')
     # print(f'debug table: {debug_table}')
@@ -140,10 +148,28 @@ def RDP_graph(adj, coords, epsilon):
 
 
     # Remove isolated nodes (nodes with degree 0 after merging)
-    new_adj = adj[keep][:, keep]
-    new_coords = coords[keep]
+    new_adj = new_adj[keep][:, keep]
+    new_coords = new_coords[keep]
 
     return new_adj, new_coords
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+def sort_map(adj,coords, mask):
+    n = np.sum(mask)
+    map = np.zeros(n,dtype=np.uint32)
+    idx_endpoints = np.nonzero(np.sum(adj[np.ix_(mask,mask)], axis=0) == 1)[0]
+    map[0] = np.nonzero(mask)[0][idx_endpoints[0]]
+    # map[idx_endpoints[1]] = np.nonzero(mask)[0][idx_endpoints[1]]
+
+    # from_node = map[0]
+    for i in range(n-1):
+        connection_1 = np.nonzero(adj[map[i]])[0][1]
+        connection_2 = np.nonzero(adj[map[i]])[0][0]
+        if connection_1 not in map and connection_1 in np.nonzero(mask)[0]:
+            map[i+1] = connection_1
+        else:
+            map[i+1] = connection_2
+    return map
 # ----------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------
 def sort_adj_coord(adj,coords):
