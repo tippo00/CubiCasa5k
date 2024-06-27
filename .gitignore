@@ -22,3 +22,5 @@ __pycache__/
 # PNG files for debug
 *.png
 *.npy
+
+*.out
