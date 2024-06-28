@@ -63,7 +63,7 @@ def find_skeleton(args):
     # Using ground truth floorplans
     gt_adj_matrix, gt_coord_matrix = make_graph(skeleton_image=gt_skeleton)
     print(f'Shape pre-reduction: {gt_coord_matrix.shape}')
-    
+
     # Reduce the number of nodes
     gt_adj_matrix, gt_coord_matrix = RDP_graph(gt_adj_matrix.copy(), gt_coord_matrix.copy(), 18) # Interesting values: 0.1, 18
     gt_adj_matrix, gt_coord_matrix = merge_by_proximity(gt_adj_matrix.copy(), gt_coord_matrix.copy(), 22) # Interesting values: 3.61, 10
@@ -271,7 +271,7 @@ def visualize_both_graphs_overlayed(ground_truth,predicted,show=False):
         ax.axis('equal')
         ax.imshow(np.invert(floorplan),cmap='Greys')
         return ax
-    
+
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ax1 = draw_plot(gt_adj_matrix,gt_coord_matrix,gt_floor_plan,ax1)
     ax2 = draw_plot(pr_adj_matrix,pr_coord_matrix,pr_floor_plan,ax2)
@@ -279,7 +279,7 @@ def visualize_both_graphs_overlayed(ground_truth,predicted,show=False):
     ax2.set_title("Prediction")
     fig.suptitle("Graph Visualization")
     fig.savefig(f'{image_folder}{filename}.png')
-    
+
     if show:
         plt.show(block=True)
 
@@ -287,8 +287,6 @@ def visualize_both_graphs_overlayed(ground_truth,predicted,show=False):
 
 
 def visualize_graph_overlayed(adj,coords,floorplan,filename = 'graph_overlayed',show=False):
-    
-
     plt.figure(figsize=(12,9))
     # Draw edges
     for i in range(len(adj)):
@@ -545,10 +543,10 @@ def predicted_bw(args):
                 prediction = torch.mean(prediction, 0, True)
             else:
                 prediction = model(images_val)
-            
+
             _, rooms, icons = post_prosessing.split_prediction(
                 prediction, img_size, split)
-            
+
             rooms_seg = np.argmax(rooms, axis=0)
             icons_seg = np.argmax(icons, axis=0)
 
@@ -557,7 +555,7 @@ def predicted_bw(args):
 
     # Finding the walls
     walls = np.array(rooms_seg == wall_index, dtype=bool)
-    
+
     # Removing small scale noise
     walls = binary_erosion(walls,square(2))
     # Filling in gaps in the walls
