@@ -74,7 +74,8 @@ def train(args, log_dir, writer, logger):
     logging.info('Loading model...')
     input_slice = {
         44: [21, 12, 11],
-        29: [21, 5, 3]
+        29: [21, 5, 3],
+        27: [21, 3, 3]
     }
     input_slice = input_slice[args.n_classes]
 

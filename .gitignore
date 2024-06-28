@@ -19,3 +19,8 @@ __pycache__/
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
+# PNG files for debug
+*.png
+*.npy
+
+*.out
