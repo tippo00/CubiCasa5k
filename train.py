@@ -75,7 +75,8 @@ def train(args, log_dir, writer, logger):
     input_slice = {
         44: [21, 12, 11],
         29: [21, 5, 3],
-        27: [21, 3, 3]
+        27: [21, 3, 3],
+        6:  [0, 3, 3]
     }
     input_slice = input_slice[args.n_classes]
 
@@ -180,7 +181,9 @@ def train(args, log_dir, writer, logger):
 
             outputs = model(images)
 
-            loss = criterion(outputs, labels)
+            labels = labels[:,21:,:,:]
+
+            loss = criterion(outputs, labels) # TODO: Need to make changes such that labels.shape = [26, 2, 256, 256] and not [26, 23, 256, 256]
             lossess.append(loss.item())
             losses = pd.concat([losses, criterion.get_loss()], ignore_index=True)
             # losses = losses.append(criterion.get_loss(), ignore_index=True)
@@ -223,6 +226,8 @@ def train(args, log_dir, writer, logger):
 
                 outputs = model(images_val)
                 labels_val = F.interpolate(labels_val, size=outputs.shape[2:], mode='bilinear', align_corners=False)
+
+                labels_val = labels_val[:,21:,:,:]
                 loss = criterion(outputs, labels_val)
 
                 room_pred = outputs[0, input_slice[0]:input_slice[0]+input_slice[1]].argmax(0).data.cpu().numpy()
@@ -333,12 +338,12 @@ def train(args, log_dir, writer, logger):
 
                         label = "Image "+str(i)+" prediction/Channel "
 
-                        for j, l in enumerate(np.squeeze(heatmap_pred.cpu())):
-                            fig = plt.figure(figsize=(18, 12))
-                            plot = fig.add_subplot(111)
-                            cax = plot.imshow(l, vmin=0, vmax=1)
-                            fig.colorbar(cax)
-                            writer.add_figure(label+str(j), fig, global_step=1+epoch)
+                        for j, l in enumerate(np.squeeze(heatmap_pred.cpu())):              # PROBABLY ERROR
+                            fig = plt.figure(figsize=(18, 12))                              # PROBABLY ERROR
+                            plot = fig.add_subplot(111)                                     # PROBABLY ERROR
+                            cax = plot.imshow(l, vmin=0, vmax=1)                            # PROBABLY ERROR
+                            fig.colorbar(cax)                                               # PROBABLY ERROR
+                            writer.add_figure(label+str(j), fig, global_step=1+epoch)       # PROBABLY ERROR
 
                         fig = plt.figure(figsize=(18, 12))
                         plot = fig.add_subplot(111)

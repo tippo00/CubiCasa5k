@@ -1,5 +1,6 @@
 from floortrans.models.hg_furukawa_original import *
 from floortrans.models.cc5k import *
+from floortrans.models.no_vector import *
 
 def get_model(name, n_classes=None, version=None):
     if name == 'hg_furukawa_original':
@@ -8,6 +9,8 @@ def get_model(name, n_classes=None, version=None):
     elif name == 'cc5k':
         model = cc5k(n_classes=n_classes)
         model.init_weights()
+    elif name == 'no-vector':
+        model = no_vector(n_classes=n_classes)
     else:
         raise ValueError('Model {} not available'.format(name))
 
