@@ -229,8 +229,6 @@ def merge_by_proximity(adj, coords, epsilon):
     Returns:
         A tuple containing a new adjacency matrix and a new coordinate matrix with merged nodes.
     """
-    n = len(adj)
-    visited = np.zeros(n, dtype=bool)
 
     old_adj = adj.copy()
     old_coords = coords.copy()
@@ -239,6 +237,8 @@ def merge_by_proximity(adj, coords, epsilon):
     while True:
         adj = old_adj.copy()
         coords = old_coords.copy()
+        n = len(adj)
+        visited = np.zeros(n, dtype=bool)
         for i in range(n):
             for j in range(i+1, n):
                 if not visited[i] and not visited[j] and np.linalg.norm(coords[i].astype(np.int32) - coords[j].astype(np.int32)) <= epsilon:
@@ -255,7 +255,7 @@ def merge_by_proximity(adj, coords, epsilon):
         # Remove isolated nodes (nodes with degree 0 after merging)
         new_adj = adj[~visited][:, ~visited]
         new_coords = coords[~visited]
-        if new_coords == old_coords & new_adj == old_adj:
+        if np.array_equal(new_coords, old_coords) and np.array_equal(new_adj, old_adj):
             break
         old_adj = new_adj
         old_coords = new_coords
