@@ -232,23 +232,33 @@ def merge_by_proximity(adj, coords, epsilon):
     n = len(adj)
     visited = np.zeros(n, dtype=bool)
 
-    # Iterate through all node pairs (avoiding duplicates)
-    for i in range(n):
-        for j in range(i+1, n):
-            if not visited[i] and not visited[j] and np.linalg.norm(coords[i].astype(np.int32) - coords[j].astype(np.int32)) <= epsilon:
-                visited[i] = True
-                # Merge adjacency information (consider other merging strategies here)
-                adj[i] = np.logical_or(adj[i], adj[j]).astype(np.uint8)
-                adj[:,i] = np.logical_or(adj[:,i], adj[:,j]).astype(np.uint8)
-                adj[j] = adj[i].copy()
-                adj[:,j] = adj[:,i].copy()
-                adj[j,j] = 0    # Remove self-loops
-                # Update coordinates for the remaining node (consider averaging or other strategies)
-                coords[i] = (coords[i] + coords[j]) // 2  # Average coordinates
+    old_adj = adj.copy()
+    old_coords = coords.copy()
 
-    # Remove isolated nodes (nodes with degree 0 after merging)
-    new_adj = adj[~visited][:, ~visited]
-    new_coords = coords[~visited]
+    # Iterate through all node pairs (avoiding duplicates)
+    while True:
+        adj = old_adj.copy()
+        coords = old_coords.copy()
+        for i in range(n):
+            for j in range(i+1, n):
+                if not visited[i] and not visited[j] and np.linalg.norm(coords[i].astype(np.int32) - coords[j].astype(np.int32)) <= epsilon:
+                    visited[i] = True
+                    # Merge adjacency information (consider other merging strategies here)
+                    adj[i] = np.logical_or(adj[i], adj[j]).astype(np.uint8)
+                    adj[:,i] = np.logical_or(adj[:,i], adj[:,j]).astype(np.uint8)
+                    adj[j] = adj[i].copy()
+                    adj[:,j] = adj[:,i].copy()
+                    adj[j,j] = 0    # Remove self-loops
+                    # Update coordinates for the remaining node (consider averaging or other strategies)
+                    coords[i] = (coords[i] + coords[j]) // 2  # Average coordinates
+
+        # Remove isolated nodes (nodes with degree 0 after merging)
+        new_adj = adj[~visited][:, ~visited]
+        new_coords = coords[~visited]
+        if new_coords == old_coords & new_adj == old_adj:
+            break
+        old_adj = new_adj
+        old_coords = new_coords
 
     return new_adj, new_coords
 
