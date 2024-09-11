@@ -89,8 +89,8 @@ def find_skeleton(args):
         visualize_graph_overlayed(pr_adj_matrix, pr_coord_matrix, pr_floor_plan,'pr_graph_overlayed',show=False)
         visualize_both_graphs_overlayed((gt_adj_matrix, gt_coord_matrix, gt_floor_plan),
                                         (pr_adj_matrix, pr_coord_matrix, pr_floor_plan), show=True)
-        visualize_graph(gt_adj_matrix, gt_coord_matrix,show=False,labels=False)
-        visualize_graph(pr_adj_matrix, pr_coord_matrix,show=False,labels=False)
+        visualize_graph(gt_adj_matrix, gt_coord_matrix,filename='gt_graph',show=False,labels=False)
+        visualize_graph(pr_adj_matrix, pr_coord_matrix,filename='pr_graph',show=False,labels=False)
         kernel = np.ones((3, 3), np.uint8)
         gt_dilated_image = cv2.dilate(gt_skeleton, kernel, iterations=2).astype(np.uint8)
         pr_dilated_image = cv2.dilate(pr_skeleton, kernel, iterations=2).astype(np.uint8)
@@ -98,7 +98,7 @@ def find_skeleton(args):
         pr_overlayed = pr_floor_plan - pr_skeleton
         plt.clf()
         plt.hist(np.sum(gt_adj_matrix, axis=0))
-        plt.savefig(f'{image_folder}hist_adjacency_matrix.png')
+        plt.savefig(f'{image_folder}gt_hist_adjacency_matrix.png')
         cv2.imwrite(f'{image_folder}gt_skeleton.png', gt_skeleton*255)
         cv2.imwrite(f'{image_folder}pr_skeleton.png', pr_skeleton*255)
         cv2.imwrite(f'{image_folder}gt_dilated_skeleton.png', gt_dilated_image*255)
@@ -173,7 +173,7 @@ def RDP_graph(adj, coords, epsilon):
         new_adj[:,lose_map] = 0
 
         if debug:
-            visualize_graph(new_adj[keep_map][:, keep_map],new_coords[keep_map],'post_rdp_visualization',False,True)
+            visualize_graph(new_adj[keep_map][:, keep_map],new_coords[keep_map],'post_rdp_visualization',False,False)
             plt.close()
             cv2.imwrite(f'{image_folder}post_rdp_adj.png', new_adj[keep_map][:, keep_map]*255)
 
@@ -555,7 +555,7 @@ def predicted_bw(args):
                 prediction = model(images_val)
 
             _, rooms, icons = post_prosessing.split_prediction(
-                prediction, img_size, split)
+                prediction.cpu()  , img_size, split)
 
             rooms_seg = np.argmax(rooms, axis=0)
             icons_seg = np.argmax(icons, axis=0)
