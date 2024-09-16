@@ -1,28 +1,30 @@
 import math
 import numpy as np
-from floortrans.loaders.svg_utils import PolygonWall, get_polygon, calc_distance, get_room_number, get_icon, get_icon_number, get_points, get_direction, get_gaussian2D
+from .svg_utils import PolygonWall, get_polygon, calc_distance, get_room_number, get_icon, get_icon_number, get_points, get_direction, get_gaussian2D
 from xml.dom import minidom
 from skimage.draw import polygon
 import cv2
 import json
+from pathlib import Path
 
 # Important to change this before lmdb creation and evaluation
 n_classes = 44
+ROOT_DIR = Path(__file__).parent
 match n_classes:
     case 44:
-        with open('/app/floortrans/loaders/rooms_44.json', 'r') as fp:
+        with open(ROOT_DIR / 'rooms_44.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('/app/floortrans/loaders/icons_44.json', 'r') as fp:
+        with open(ROOT_DIR / 'icons_44.json', 'r') as fp:
             data_icons = json.load(fp)
     case 29:
-        with open('/app/floortrans/loaders/rooms_29.json', 'r') as fp:
+        with open(ROOT_DIR / 'rooms_29.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('/app/floortrans/loaders/icons_29.json', 'r') as fp:
+        with open(ROOT_DIR / 'icons_29.json', 'r') as fp:
             data_icons = json.load(fp)
     case 27:
-        with open('/app/floortrans/loaders/rooms_27.json', 'r') as fp:
+        with open(ROOT_DIR / 'rooms_27.json', 'r') as fp:
             data_rooms = json.load(fp)
-        with open('/app/floortrans/loaders/icons_27.json', 'r') as fp:
+        with open(ROOT_DIR / 'icons_27.json', 'r') as fp:
             data_icons = json.load(fp)
 
 all_rooms = data_rooms['all_rooms']

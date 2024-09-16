@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from floortrans.models.hg_furukawa_original import *
+from .hg_furukawa_original import *
 
 
 class cc5k(hg_furukawa_original):

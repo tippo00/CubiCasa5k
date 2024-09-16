@@ -1,5 +1,5 @@
-from floortrans.models.hg_furukawa_original import *
-from floortrans.models.cc5k import *
+from .hg_furukawa_original import *
+from .cc5k import *
 
 def get_model(name, n_classes=None, version=None):
     if name == 'hg_furukawa_original':
